@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Jupyter
+*.ipynb_checkpoints
+
+# Logs and checkpoints
+*.log 
+*.pth
+*.pt
+*.ckpt
+
+
+#VSCode
+.vscode/
+
+
+# macOS
+.DS_Store
+
+# Lightning
+lightning_logs/
+
+
+# Wandb
+wandb/
