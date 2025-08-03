@@ -9,7 +9,9 @@ from torch.utils.data import TensorDataset, random_split
 class PathIntegrationDataModule(L.LightningDataModule):
     def __init__(
         self,
+        num_trajectories: int,
         batch_size: int,
+        num_workers: int,
         train_val_split: float,
         start_time: float,
         end_time: float,
@@ -20,7 +22,9 @@ class PathIntegrationDataModule(L.LightningDataModule):
         tau_vel: float = 1,
     ) -> None:
         super().__init__()
+        self.num_trajectories = num_trajectories
         self.batch_size = batch_size
+        self.num_workers = num_workers
         self.train_val_split = train_val_split
         self.start_time = start_time
         self.end_time = end_time
@@ -50,11 +54,11 @@ class PathIntegrationDataModule(L.LightningDataModule):
         positions : (batch, T, 2), ground-truth (x,y) positions (optional target)
         """
         # --- initial position & velocity ----------------------------------------
-        pos = torch.rand(self.batch_size, 2, device=device) * self.arena_L
+        pos = torch.rand(self.num_trajectories, 2, device=device) * self.arena_L
         # sample initial heading uniformly in (0, 2pi), speed around mu_speed
-        hd0 = torch.rand(self.batch_size, device=device) * 2 * torch.pi
+        hd0 = torch.rand(self.num_trajectories, device=device) * 2 * torch.pi
         spd0 = torch.clamp(
-            torch.randn(self.batch_size, device=device) * self.sigma_speed
+            torch.randn(self.num_trajectories, device=device) * self.sigma_speed
             + self.mu_speed,
             min=0.0,
         )
@@ -118,7 +122,19 @@ class PathIntegrationDataModule(L.LightningDataModule):
         )
 
     def train_dataloader(self) -> DataLoader:
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
+        return DataLoader(
+            self.train_dataset,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            persistent_workers=True,
+            shuffle=True,
+        )
 
     def val_dataloader(self) -> DataLoader:
-        return DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False)
+        return DataLoader(
+            self.val_dataset,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            persistent_workers=True,
+            shuffle=False,
+        )
