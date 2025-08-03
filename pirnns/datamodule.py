@@ -2,7 +2,8 @@ import lightning as L
 from torch.utils.data import DataLoader
 import torch
 import math
-from torch.utils.data import TensorDataset
+from torch.utils.data import TensorDataset, random_split
+
 
 
 class PathIntegrationDataModule(L.LightningDataModule):
@@ -107,8 +108,14 @@ class PathIntegrationDataModule(L.LightningDataModule):
 
     def setup(self, stage=None) -> None:
         input, target = self._simulate_trajectories(device="cpu")
-        self.train_dataset = TensorDataset(input, target)
-        self.val_dataset = TensorDataset(input, target)
+        full_dataset = TensorDataset(input, target)
+
+        # split into train and val
+        train_size = int(self.train_val_split * len(full_dataset))
+        val_size = len(full_dataset) - train_size
+        self.train_dataset, self.val_dataset = random_split(
+            full_dataset, [train_size, val_size]
+        )
 
     def train_dataloader(self) -> DataLoader:
         return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
