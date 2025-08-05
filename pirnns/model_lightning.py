@@ -13,8 +13,6 @@ class PathIntRNNLightning(L.LightningModule):
         self.model = model
         self.lr = lr
 
-        self.train_losses: list[torch.Tensor] = []
-        self.val_losses: list[torch.Tensor] = []
 
     def training_step(self, batch) -> torch.Tensor:
         inputs, targets = batch
@@ -24,7 +22,8 @@ class PathIntRNNLightning(L.LightningModule):
 
         loss = nn.functional.mse_loss(outputs, targets)
 
-        self.train_losses.append(loss)
+        self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True)
+        
         return loss
 
     def validation_step(self, batch) -> torch.Tensor:
@@ -33,7 +32,8 @@ class PathIntRNNLightning(L.LightningModule):
 
         loss = nn.functional.mse_loss(outputs, targets)
 
-        self.val_losses.append(loss)
+        self.log('val_loss', loss, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+        
         return loss
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
