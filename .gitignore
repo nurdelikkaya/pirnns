@@ -30,3 +30,6 @@ lightning_logs/
 
 # Wandb
 wandb/
+
+# Virtual Environment
+rnn_env/
