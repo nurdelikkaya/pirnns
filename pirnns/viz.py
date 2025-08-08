@@ -12,6 +12,7 @@ def create_trajectory_animation(
     pca_trained,
     pca_untrained,
     device,
+    place_cells,
     trajectory_idx=0,
     num_frames=100,
     fps=2,
@@ -34,6 +35,8 @@ def create_trajectory_animation(
         Fitted PCA objects for dimensionality reduction
     device : str
         Device to run models on
+    place_cells : PlaceCells
+        Used to decode model logits to spatial positions
     trajectory_idx : int, default=0
         Which trajectory to visualize
     num_frames : int, default=100
@@ -76,10 +79,16 @@ def create_trajectory_animation(
         untrained_hidden, untrained_output = untrained_model(
             inputs=single_inputs_gpu, pos_0=single_targets_gpu[:, 0, :]
         )
+
+        # Decode logits -> probabilities -> (x, y) via place cells
+        trained_probs = torch.softmax(trained_output, dim=-1)
+        untrained_probs = torch.softmax(untrained_output, dim=-1)
+        pred_pos_trained = place_cells.get_nearest_cell_pos(trained_probs)   # (1,T,2)
+        pred_pos_untrained = place_cells.get_nearest_cell_pos(untrained_probs)
     
     # Convert to numpy
     trajectory_true = single_targets[0].cpu().numpy()
-    trajectory_predicted = trained_output[0].cpu().numpy()
+    trajectory_predicted = pred_pos_trained[0].cpu().numpy()
     trajectory_hidden_trained = trained_hidden[0].cpu().numpy()
     trajectory_hidden_untrained = untrained_hidden[0].cpu().numpy()
     velocity_inputs = single_inputs[0].cpu().numpy()  # [heading, speed]
