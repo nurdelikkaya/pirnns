@@ -16,7 +16,8 @@ class PathIntegrationDataModule(L.LightningDataModule):
         start_time: float,
         end_time: float,
         num_time_steps: int,
-        arena_L: float = 5,
+        box_width: float = 2.2, #changed arena_L to box_width and box_height, value changed from 5 to 2.2
+        box_height: float = 2.2,
         mu_speed: float = 1,
         sigma_speed: float = 0.5,
         tau_vel: float = 1,
@@ -31,7 +32,8 @@ class PathIntegrationDataModule(L.LightningDataModule):
         self.num_time_steps = num_time_steps
         self.dt = (end_time - start_time) / num_time_steps
 
-        self.arena_L = arena_L
+        self.box_width = box_width #changed arena_L to box_width and box_height
+        self.box_height = box_height
         self.mu_speed = mu_speed
         self.sigma_speed = sigma_speed
         self.tau_vel = tau_vel
@@ -54,7 +56,9 @@ class PathIntegrationDataModule(L.LightningDataModule):
         positions : (batch, T, 2), ground-truth (x,y) positions (optional target)
         """
         # --- initial position & velocity ----------------------------------------
-        pos = torch.rand(self.num_trajectories, 2, device=device) * self.arena_L
+        pos_x = torch.rand(self.num_trajectories, device=device) * self.box_width
+        pos_y = torch.rand(self.num_trajectories, device=device) * self.box_height
+        pos = torch.stack((pos_x, pos_y), dim=-1)
         # sample initial heading uniformly in (0, 2pi), speed around mu_speed
         hd0 = torch.rand(self.num_trajectories, device=device) * 2 * torch.pi
         spd0 = torch.clamp(
@@ -81,22 +85,22 @@ class PathIntegrationDataModule(L.LightningDataModule):
 
             # --- reflective boundaries -----------------------------------------
             out_left = pos[:, 0] < 0
-            out_right = pos[:, 0] > self.arena_L
+            out_right = pos[:, 0] > self.box_width
             out_bottom = pos[:, 1] < 0
-            out_top = pos[:, 1] > self.arena_L
+            out_top = pos[:, 1] > self.box_height
 
             # reflect positions and flip corresponding velocity component
             if out_left.any():
                 pos[out_left, 0] *= -1
                 vel[out_left, 0] *= -1
             if out_right.any():
-                pos[out_right, 0] = 2 * self.arena_L - pos[out_right, 0]
+                pos[out_right, 0] = 2 * self.box_width - pos[out_right, 0]
                 vel[out_right, 0] *= -1
             if out_bottom.any():
                 pos[out_bottom, 1] *= -1
                 vel[out_bottom, 1] *= -1
             if out_top.any():
-                pos[out_top, 1] = 2 * self.arena_L - pos[out_top, 1]
+                pos[out_top, 1] = 2 * self.box_height - pos[out_top, 1]
                 vel[out_top, 1] *= -1
 
             pos_all.append(pos)

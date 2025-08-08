@@ -7,7 +7,7 @@ import argparse
 import yaml
 import torch
 import os
-from lightning.pytorch.utilities.rank_zero import rank_zero_only
+from lightning.fabric.utilities.rank_zero import rank_zero_only #changed lightning.pytorch to lightning.fabric bcs Lightning now uses the lightning.fabric backend for device/multiprocessing abstractions
 from loss_logger_callback import LossLoggerCallback
 
 from datamodule import PathIntegrationDataModule
@@ -16,8 +16,10 @@ import os
 
 from model import PathIntRNN
 from model_lightning import PathIntRNNLightning
+from place_cells import PlaceCells
 
 import datetime
+
 
 log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "logs"))
 print("Log directory:", log_dir)
@@ -50,7 +52,8 @@ def main(config: dict):
         start_time=config["start_time"],
         end_time=config["end_time"],
         num_time_steps=config["num_time_steps"],
-        arena_L=config["arena_L"],
+        box_width=config["box_width"],   
+        box_height=config["box_height"],   
         mu_speed=config["mu_speed"],
         sigma_speed=config["sigma_speed"],
         tau_vel=config["tau_vel"],
@@ -63,6 +66,8 @@ def main(config: dict):
     val_loader = datamodule.val_dataloader()
 
     print("Data prepared")
+
+    place_cells = PlaceCells(config)
 
 
 
@@ -78,6 +83,7 @@ def main(config: dict):
 
     rnn_lightning = PathIntRNNLightning(
         model=model,
+        place_cells=place_cells,
         lr=config["learning_rate"],
     )
 

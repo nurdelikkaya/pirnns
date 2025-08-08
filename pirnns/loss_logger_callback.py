@@ -1,7 +1,7 @@
 import lightning as L
 import json
 import os
-from lightning.pytorch.utilities.rank_zero import rank_zero_only
+from lightning.fabric.utilities.rank_zero import rank_zero_only #changed lightning.pytorch to lightning.fabric bcs Lightning now uses the lightning.fabric backend for device/multiprocessing abstractions
 
 class LossLoggerCallback(L.Callback):
     def __init__(self, save_dir):

@@ -8,7 +8,8 @@ class RNNStep(nn.Module):
         input_size: int,
         hidden_size: int,
         alpha: float,
-        activation: type[nn.Module] = nn.Tanh,
+        activation: type[nn.Module] = nn.ReLU, #changed to ReLU
+        place_cells=None,
     ) -> None:
         """
         A single time step of the RNN.
@@ -18,6 +19,7 @@ class RNNStep(nn.Module):
         self.hidden_size = hidden_size
         self.alpha = alpha
         self.activation = activation()
+        self.place_cells = place_cells
 
         self.W_in = nn.Linear(input_size, hidden_size)
         self.W_rec = nn.Linear(hidden_size, hidden_size)
@@ -36,7 +38,7 @@ class PathIntRNN(nn.Module):
         hidden_size: int,
         output_size: int,
         alpha: float = 0.1,
-        activation: type[nn.Module] = nn.Tanh,
+        activation: type[nn.Module] = nn.ReLU,
     ) -> None:
         """
         Initialize the Path Integrating RNN.
