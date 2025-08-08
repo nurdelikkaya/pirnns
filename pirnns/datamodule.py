@@ -56,8 +56,12 @@ class PathIntegrationDataModule(L.LightningDataModule):
         positions : (batch, T, 2), ground-truth (x,y) positions (optional target)
         """
         # --- initial position & velocity ----------------------------------------
-        pos_x = torch.rand(self.num_trajectories, device=device) * self.box_width
-        pos_y = torch.rand(self.num_trajectories, device=device) * self.box_height
+
+        half_w = self.box_width / 2.0
+        half_h = self.box_height / 2.0
+
+        pos_x = (torch.rand(self.num_trajectories, device=device) - 0.5) * self.box_width
+        pos_y = (torch.rand(self.num_trajectories, device=device) - 0.5) * self.box_height
         pos = torch.stack((pos_x, pos_y), dim=-1)
         # sample initial heading uniformly in (0, 2pi), speed around mu_speed
         hd0 = torch.rand(self.num_trajectories, device=device) * 2 * torch.pi
@@ -84,23 +88,24 @@ class PathIntegrationDataModule(L.LightningDataModule):
             pos = pos + vel * self.dt
 
             # --- reflective boundaries -----------------------------------------
-            out_left = pos[:, 0] < 0
-            out_right = pos[:, 0] > self.box_width
-            out_bottom = pos[:, 1] < 0
-            out_top = pos[:, 1] > self.box_height
+            out_left = pos[:, 0] < -half_w
+            out_right = pos[:, 0] > half_w
+            out_bottom = pos[:, 1] < -half_h
+            out_top = pos[:, 1] > half_h
 
             # reflect positions and flip corresponding velocity component
             if out_left.any():
-                pos[out_left, 0] *= -1
+                # reflect across x = -half_w
+                pos[out_left, 0] = -2 * half_w - pos[out_left, 0]
                 vel[out_left, 0] *= -1
             if out_right.any():
-                pos[out_right, 0] = 2 * self.box_width - pos[out_right, 0]
+                pos[out_right, 0] = 2 * half_w - pos[out_right, 0]
                 vel[out_right, 0] *= -1
             if out_bottom.any():
-                pos[out_bottom, 1] *= -1
+                pos[out_bottom, 1] = -2 * half_h - pos[out_bottom, 1]
                 vel[out_bottom, 1] *= -1
             if out_top.any():
-                pos[out_top, 1] = 2 * self.box_height - pos[out_top, 1]
+                pos[out_top, 1] = 2 * half_h - pos[out_top, 1]
                 vel[out_top, 1] *= -1
 
             pos_all.append(pos)
