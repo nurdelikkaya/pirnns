@@ -21,6 +21,7 @@ class PathIntegrationDataModule(L.LightningDataModule):
         mu_speed: float = 1,
         sigma_speed: float = 0.5,
         tau_vel: float = 1,
+        fixed_start: bool = True,  
     ) -> None:
         super().__init__()
         self.num_trajectories = num_trajectories
@@ -37,7 +38,8 @@ class PathIntegrationDataModule(L.LightningDataModule):
         self.mu_speed = mu_speed
         self.sigma_speed = sigma_speed
         self.tau_vel = tau_vel
-
+        self.fixed_start = fixed_start
+        self._start_pos_tensor = None
     def _simulate_trajectories(
         self,
         device: str = "cpu",
@@ -60,9 +62,13 @@ class PathIntegrationDataModule(L.LightningDataModule):
         half_w = self.box_width / 2.0
         half_h = self.box_height / 2.0
 
-        pos_x = (torch.rand(self.num_trajectories, device=device) - 0.5) * self.box_width
-        pos_y = (torch.rand(self.num_trajectories, device=device) - 0.5) * self.box_height
-        pos = torch.stack((pos_x, pos_y), dim=-1)
+        if self.fixed_start:
+            pos = self._start_pos_tensor.to(device).expand(self.num_trajectories, 2).clone()
+        else:
+            pos_x = (torch.rand(self.num_trajectories, device=device) - 0.5) * self.box_width
+            pos_y = (torch.rand(self.num_trajectories, device=device) - 0.5) * self.box_height
+            pos = torch.stack((pos_x, pos_y), dim=-1)
+
         # sample initial heading uniformly in (0, 2pi), speed around mu_speed
         hd0 = torch.rand(self.num_trajectories, device=device) * 2 * torch.pi
         spd0 = torch.clamp(
@@ -120,6 +126,14 @@ class PathIntegrationDataModule(L.LightningDataModule):
         return input, pos_all
 
     def setup(self, stage=None) -> None:
+        if self.fixed_start:
+            # sample one random start once
+            x0 = (torch.rand(1).item() - 0.5) * self.box_width
+            y0 = (torch.rand(1).item() - 0.5) * self.box_height
+            self._start_pos_tensor = torch.tensor([x0, y0], dtype=torch.float32)
+        else:
+            self._start_pos_tensor = None
+        
         input, target = self._simulate_trajectories(device="cpu")
         full_dataset = TensorDataset(input, target)
 

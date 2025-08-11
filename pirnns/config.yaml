@@ -2,6 +2,9 @@
 project_name: "path-integration-rnn"
 device: "cpu"  # or "cuda" or "mps" depending on your setup
 
+# Initial position
+fixed_start: true #add to keep the inital position same across trajectories
+
 # Data configuration  
 num_trajectories: 2000
 batch_size: 1000 #changed from 128
