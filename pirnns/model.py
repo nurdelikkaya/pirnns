@@ -58,7 +58,7 @@ class PathIntRNN(nn.Module):
 
         # Layer to initialize hidden state
         self.W_h_init = nn.Linear(2, hidden_size)
-
+        self.h_init_activation = activation()
         self.initialize_weights()
 
     def forward(
@@ -68,7 +68,7 @@ class PathIntRNN(nn.Module):
         # pos_0 has shape (batch_size, 2)
         hidden_states = []
         outputs = []
-        hidden = torch.tanh(self.W_h_init(pos_0))
+        hidden = self.h_init_activation(self.W_h_init(pos_0))
         for t in range(inputs.shape[1]):
             input_t = inputs[:, t, :]
             hidden = self.rnn_step(input_t, hidden)
