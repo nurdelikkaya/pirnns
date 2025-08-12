@@ -3,7 +3,7 @@ project_name: "path-integration-rnn"
 device: "cpu"  # or "cuda" or "mps" depending on your setup
 
 # Initial position
-fixed_start: true #add to keep the inital position same across trajectories
+fixed_start: true #to keep the inital position same across trajectories assign it to True
 
 # Data configuration  
 num_trajectories: 2000
@@ -21,7 +21,7 @@ tau_vel: 1
 box_width: 2.2  #deleted arena_L added box_width and box_height
 box_height: 2.2
 place_cell_rf: 0.12
-DoG: true
+DoG: true    #to use Difference of Gaussian assign it to True, to use simple Gaussian assign it to False
 surround_scale: 2
 periodic: false
 
